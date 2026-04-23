@@ -1,0 +1,950 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIP Calculator - Plan Your Wealth</title>
+    <meta name="description" content="Free SIP Calculator with step-up SIP, inflation adjustment, and interactive charts. Plan your mutual fund investments smartly.">
+    <meta name="theme-color" content="#6366f1">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #a5b4fc;
+            --accent: #f59e0b;
+            --accent-light: #fbbf24;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg-start: #0f0c29;
+            --bg-mid: #302b63;
+            --bg-end: #24243e;
+            --card-bg: rgba(255, 255, 255, 0.06);
+            --card-border: rgba(255, 255, 255, 0.12);
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --input-bg: rgba(255, 255, 255, 0.08);
+            --input-border: rgba(255, 255, 255, 0.15);
+            --input-focus: rgba(99, 102, 241, 0.5);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-mid) 50%, var(--bg-end) 100%);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before, body::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            z-index: 0;
+            animation: float 20s ease-in-out infinite;
+        }
+        body::before {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, #6366f1 0%, transparent 70%);
+            top: -100px;
+            right: -100px;
+        }
+        body::after {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, #f59e0b 0%, transparent 70%);
+            bottom: -80px;
+            left: -80px;
+            animation-delay: -10s;
+            animation-direction: reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(30px, -40px) scale(1.05); }
+            50% { transform: translate(-20px, 20px) scale(0.95); }
+            75% { transform: translate(15px, 35px) scale(1.02); }
+        }
+
+        .page-wrapper {
+            position: relative;
+            z-index: 1;
+            padding: 40px 20px 60px;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 36px;
+            animation: fadeDown 0.8s ease-out;
+        }
+        .header h1 {
+            font-size: clamp(1.8rem, 4.5vw, 2.6rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, var(--primary-light) 50%, var(--accent-light) 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+        .header p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            margin-top: 8px;
+            font-weight: 400;
+        }
+
+        @keyframes fadeDown {
+            from { opacity: 0; transform: translateY(-24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto 40px;
+            background: var(--card-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 40px 36px 36px;
+            animation: fadeUp 0.8s ease-out 0.15s both;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(28px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-wrapper {
+            margin-bottom: 20px;
+            animation: fadeUp 0.5s ease-out both;
+        }
+        .input-wrapper:nth-child(1) { animation-delay: 0.2s; }
+        .input-wrapper:nth-child(2) { animation-delay: 0.28s; }
+        .input-wrapper:nth-child(3) { animation-delay: 0.36s; }
+        .input-wrapper:nth-child(4) { animation-delay: 0.44s; }
+        .input-wrapper:nth-child(5) { animation-delay: 0.52s; }
+
+        label {
+            display: block;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 8px;
+        }
+
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--input-bg);
+            border: 1.5px solid var(--input-border);
+            border-radius: 12px;
+            font-size: 1.05rem;
+            font-family: inherit;
+            color: var(--text);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+        input[type="number"]::placeholder, input[type="text"]::placeholder {
+            color: rgba(148, 163, 184, 0.5);
+        }
+        input[type="number"]:focus, input[type="text"]:focus {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.08);
+            box-shadow: 0 0 0 4px var(--input-focus), 0 0 20px rgba(99, 102, 241, 0.15);
+        }
+        input[type="number"]:hover, input[type="text"]:hover {
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .input-error {
+            border-color: var(--danger) !important;
+            background: rgba(239, 68, 68, 0.08) !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+        }
+        .error-message {
+            color: #fca5a5;
+            font-size: 0.82rem;
+            margin-top: 6px;
+            display: none;
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-3px); }
+            80% { transform: translateX(3px); }
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        .checkbox-row input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--input-border);
+            border-radius: 6px;
+            background: var(--input-bg);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .checkbox-row input[type="checkbox"]:checked {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .checkbox-row input[type="checkbox"]:checked::after {
+            content: '\2713';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .checkbox-row label {
+            text-transform: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text);
+            margin: 0 0 0 10px;
+            letter-spacing: 0;
+            cursor: pointer;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px 24px;
+            border: none;
+            border-radius: 14px;
+            font-family: inherit;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            outline: none;
+        }
+        .btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .btn:hover::after {
+            opacity: 1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #fff;
+            margin-top: 8px;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.5);
+        }
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1.5px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: var(--text);
+            transform: translateY(-1px);
+        }
+
+        .btn-chart {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1.5px solid var(--card-border);
+            color: var(--text);
+            font-size: 0.92rem;
+            padding: 13px 20px;
+            border-radius: 12px;
+        }
+        .btn-chart:hover {
+            background: rgba(99, 102, 241, 0.15);
+            border-color: var(--primary);
+        }
+        .btn-chart.active-toggle {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: var(--primary);
+            color: var(--primary-light);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        .button-group .btn-chart {
+            flex: 1;
+        }
+
+        .result-section {
+            display: none;
+            margin-top: 28px;
+            animation: fadeUp 0.6s ease-out;
+        }
+        .result-section.visible {
+            display: block;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        .result-card {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 18px 16px;
+            text-align: center;
+            transition: all 0.3s ease;
+            animation: scaleIn 0.5s ease-out both;
+        }
+        .result-card:nth-child(1) { animation-delay: 0.1s; }
+        .result-card:nth-child(2) { animation-delay: 0.2s; }
+        .result-card:nth-child(3) { animation-delay: 0.3s; }
+        .result-card:nth-child(4) { animation-delay: 0.4s; }
+        .result-card:nth-child(5) { animation-delay: 0.5s; }
+
+        .result-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+        .result-card .card-label {
+            font-size: 0.76rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .result-card .card-value {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text);
+            line-height: 1.2;
+        }
+        .result-card.invested .card-value { color: var(--primary-light); }
+        .result-card.future .card-value { color: var(--accent-light); }
+        .result-card.gains .card-value { color: #34d399; }
+        .result-card.returns .card-value { color: #f472b6; }
+        .result-card.inflation .card-value { color: #93c5fd; }
+        .result-card.full-width { grid-column: 1 / -1; }
+
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.9) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .chart-container {
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 24px;
+            display: none;
+        }
+        .chart-container.active {
+            display: block;
+            animation: fadeUp 0.5s ease-out;
+        }
+        .chart-container canvas {
+            max-width: 100%;
+            height: auto;
+        }
+        #lineChartContainer {
+            padding: 30px;
+        }
+        #lineChartContainer canvas {
+            min-height: 400px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 24px 20px 32px;
+            color: rgba(148, 163, 184, 0.5);
+            font-size: 0.85rem;
+            animation: fadeUp 0.8s ease-out 0.6s both;
+        }
+        .footer a {
+            color: var(--primary-light);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        .footer a:hover { color: #fff; }
+
+        @media (max-width: 600px) {
+            .page-wrapper { padding: 24px 12px 40px; }
+            .container { padding: 28px 20px 28px; border-radius: 20px; }
+            .result-grid { grid-template-columns: 1fr; }
+            .button-group { flex-direction: column; }
+            .header h1 { font-size: 1.6rem; }
+            body::before { width: 300px; height: 300px; }
+            body::after { width: 250px; height: 250px; }
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            appearance: textfield;
+            -moz-appearance: textfield;
+        }
+
+        #inflationInput {
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.4s ease, opacity 0.3s ease, margin 0.3s ease;
+            margin-bottom: 0;
+        }
+        #inflationInput.visible {
+            max-height: 120px;
+            opacity: 1;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrapper">
+        <header class="header">
+            <h1>SIP Calculator</h1>
+            <p>Plan your wealth with precision</p>
+        </header>
+
+        <div class="container">
+            <form id="sipForm" novalidate>
+                <div class="input-wrapper">
+                    <label for="initialCorpus">Initial Investment (Lump Sum)</label>
+                    <input type="text" id="initialCorpus" inputmode="numeric" pattern="[0-9,]*" placeholder="e.g., 50,000">
+                    <div class="error-message" id="initialCorpusError"></div>
+                </div>
+
+                <div class="input-wrapper">
+                    <label for="sipAmount">Monthly SIP Amount</label>
+                    <input type="text" id="sipAmount" inputmode="numeric" pattern="[0-9,]*" placeholder="e.g., 5,000">
+                    <div class="error-message" id="sipAmountError"></div>
+                </div>
+
+                <div class="input-wrapper">
+                    <label for="stepUp">Annual Step-Up (%)</label>
+                    <input type="number" id="stepUp" min="0" max="50" step="0.01" value="0" placeholder="e.g., 10">
+                    <div class="error-message" id="stepUpError"></div>
+                </div>
+
+                <div class="input-wrapper">
+                    <label for="rateOfReturn">Expected Return (% p.a.)</label>
+                    <input type="number" id="rateOfReturn" min="0" max="100" step="0.01" placeholder="e.g., 12" required>
+                    <div class="error-message" id="rateOfReturnError"></div>
+                </div>
+
+                <div class="input-wrapper">
+                    <label for="years">Investment Duration (Years)</label>
+                    <input type="number" id="years" min="1" max="50" placeholder="e.g., 10" required>
+                    <div class="error-message" id="yearsError"></div>
+                </div>
+
+                <div class="checkbox-row">
+                    <input type="checkbox" id="considerInflation">
+                    <label for="considerInflation">Adjust for inflation</label>
+                </div>
+
+                <div id="inflationInput">
+                    <div class="input-wrapper">
+                        <label for="inflationRate">Inflation Rate (% p.a.)</label>
+                        <input type="number" id="inflationRate" min="0" max="30" step="0.01" value="6" placeholder="e.g., 6">
+                        <div class="error-message" id="inflationRateError"></div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Calculate Returns</button>
+                <button type="button" class="btn btn-secondary" id="resetBtn">Reset All</button>
+            </form>
+
+            <div class="result-section" id="resultSection">
+                <div class="result-grid" id="resultGrid"></div>
+
+                <div class="button-group" id="chartButtons">
+                    <button type="button" class="btn btn-chart" id="togglePieBtn">Pie Chart</button>
+                    <button type="button" class="btn btn-chart" id="toggleLineBtn">Growth Chart</button>
+                </div>
+
+                <div class="chart-container" id="pieChartContainer">
+                    <canvas id="pieChart"></canvas>
+                </div>
+                <div class="chart-container" id="lineChartContainer">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            Built with care for smart investors &bull; SIP Calculator &copy; 2026
+        </footer>
+    </div>
+
+    <script>
+        const MONTHS_IN_YEAR = 12;
+        const MAX_YEARS = 50;
+
+        function formatCurrency(value) {
+            if (!isFinite(value)) return '0';
+            if (value >= 1e7) return '\u20b9' + (value / 1e7).toFixed(2) + ' Cr';
+            if (value >= 1e5) return '\u20b9' + (value / 1e5).toFixed(2) + ' L';
+            return '\u20b9' + value.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+        }
+
+        function formatCurrencyFull(value) {
+            return isFinite(value) ? '\u20b9' + value.toLocaleString('en-IN', { maximumFractionDigits: 0 }) : '\u20b90';
+        }
+
+        function parseNumericInput(value) {
+            return parseFloat(String(value).replace(/,/g, '')) || 0;
+        }
+
+        function showError(fieldId, message) {
+            const errorEl = document.getElementById(fieldId + 'Error');
+            const inputEl = document.getElementById(fieldId);
+            if (errorEl) {
+                errorEl.textContent = message;
+                errorEl.style.display = 'block';
+                inputEl.classList.add('input-error');
+            }
+        }
+
+        function clearError(fieldId) {
+            const errorEl = document.getElementById(fieldId + 'Error');
+            const inputEl = document.getElementById(fieldId);
+            if (errorEl) {
+                errorEl.textContent = '';
+                errorEl.style.display = 'none';
+                inputEl.classList.remove('input-error');
+            }
+        }
+
+        function clearAllErrors() {
+            ['initialCorpus', 'sipAmount', 'stepUp', 'rateOfReturn', 'years', 'inflationRate'].forEach(clearError);
+        }
+
+        function validateInputs(sip, initial, rate, years, stepUp, inflation) {
+            clearAllErrors();
+            let isValid = true;
+            if (sip === 0 && initial === 0) {
+                showError('sipAmount', 'Provide SIP or initial investment');
+                showError('initialCorpus', 'Provide SIP or initial investment');
+                isValid = false;
+            }
+            if (sip < 0) { showError('sipAmount', 'Cannot be negative'); isValid = false; }
+            if (initial < 0) { showError('initialCorpus', 'Cannot be negative'); isValid = false; }
+            if (rate <= 0) { showError('rateOfReturn', 'Must be greater than 0'); isValid = false; }
+            if (rate > 100) { showError('rateOfReturn', 'Seems unrealistic (>100%)'); isValid = false; }
+            if (years < 1 || years > MAX_YEARS) { showError('years', 'Between 1 and ' + MAX_YEARS); isValid = false; }
+            if (stepUp < 0 || stepUp > 50) { showError('stepUp', 'Between 0 and 50%'); isValid = false; }
+            if (inflation < 0 || inflation > 30) { showError('inflationRate', 'Between 0 and 30%'); isValid = false; }
+            return isValid;
+        }
+
+        function calculateSIPFutureValue(sip, rate, months, stepUpRate) {
+            const r = rate / MONTHS_IN_YEAR / 100;
+            let sipFV = 0;
+            if (stepUpRate > 0) {
+                let currentSIP = sip;
+                for (let month = 1; month <= months; month++) {
+                    if (month > 1 && (month - 1) % MONTHS_IN_YEAR === 0) {
+                        currentSIP *= (1 + stepUpRate / 100);
+                    }
+                    const monthsLeft = months - month + 1;
+                    sipFV += r === 0 ? currentSIP : currentSIP * Math.pow(1 + r, monthsLeft);
+                }
+            } else {
+                if (r === 0) {
+                    sipFV = sip * months;
+                } else {
+                    sipFV = sip * ((Math.pow(1 + r, months) - 1) / r) * (1 + r);
+                }
+            }
+            return sipFV;
+        }
+
+        function calculateInitialInvestmentFV(initial, rate, months) {
+            const r = rate / MONTHS_IN_YEAR / 100;
+            return r === 0 ? initial : initial * Math.pow(1 + r, months);
+        }
+
+        function calculateTotalInvested(initial, sip, years, stepUpRate) {
+            let invested = initial;
+            if (stepUpRate > 0) {
+                let currentSIP = sip;
+                for (let year = 0; year < years; year++) {
+                    invested += currentSIP * MONTHS_IN_YEAR;
+                    currentSIP *= (1 + stepUpRate / 100);
+                }
+            } else {
+                invested += sip * years * MONTHS_IN_YEAR;
+            }
+            return invested;
+        }
+
+        function calculateYearlyData(initial, sip, rate, years, stepUpRate) {
+            const r = rate / MONTHS_IN_YEAR / 100;
+            const investedArr = [];
+            const corpusArr = [];
+            const labels = [];
+            if (sip === 0) {
+                let corpus = initial;
+                for (let year = 1; year <= years; year++) {
+                    investedArr.push(initial);
+                    corpus = corpus * Math.pow(1 + r, MONTHS_IN_YEAR);
+                    corpusArr.push(corpus);
+                    labels.push('Yr ' + year);
+                }
+            } else {
+                let totalInvested = initial;
+                let totalCorpus = initial;
+                let currentSIP = sip;
+                for (let year = 1; year <= years; year++) {
+                    let investedThisYear = 0;
+                    let corpusThisYear = totalCorpus;
+                    for (let month = 1; month <= MONTHS_IN_YEAR; month++) {
+                        investedThisYear += currentSIP;
+                        corpusThisYear = corpusThisYear * (1 + r) + currentSIP;
+                    }
+                    totalInvested += investedThisYear;
+                    totalCorpus = corpusThisYear;
+                    investedArr.push(totalInvested);
+                    corpusArr.push(totalCorpus);
+                    labels.push('Yr ' + year);
+                    currentSIP *= (1 + stepUpRate / 100);
+                }
+            }
+            return { investedArr, corpusArr, labels };
+        }
+
+        const chartColors = {
+            invested: '#818cf8',
+            investedBg: 'rgba(129,140,248,0.15)',
+            corpus: '#fbbf24',
+            corpusBg: 'rgba(251,191,36,0.12)'
+        };
+
+        function drawPieChart(invested, totalFV) {
+            const interest = Math.max(totalFV - invested, 0);
+            const total = invested + interest;
+            const ctx = document.getElementById('pieChart').getContext('2d');
+            if (window.sipPieChart) window.sipPieChart.destroy();
+            window.sipPieChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Invested', 'Gains'],
+                    datasets: [{
+                        data: [invested, interest],
+                        backgroundColor: [chartColors.invested, chartColors.corpus],
+                        borderColor: 'rgba(15, 12, 41, 0.5)',
+                        borderWidth: 3,
+                        hoverOffset: 12
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    cutout: '60%',
+                    animation: { animateRotate: true, duration: 1200, easing: 'easeOutQuart' },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#94a3b8', font: { family: 'Inter', size: 13, weight: 600 }, padding: 20 }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 12, 41, 0.95)',
+                            titleFont: { family: 'Inter', weight: 700 },
+                            bodyFont: { family: 'Inter' },
+                            padding: 14,
+                            cornerRadius: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed;
+                                    const pct = ((value / total) * 100).toFixed(1);
+                                    return ' ' + context.label + ': ' + formatCurrencyFull(value) + ' (' + pct + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function drawLineChart(labels, investedArr, corpusArr) {
+            const ctx = document.getElementById('lineChart').getContext('2d');
+            if (window.sipLineChart) window.sipLineChart.destroy();
+            window.sipLineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Invested',
+                            data: investedArr,
+                            borderColor: chartColors.invested,
+                            backgroundColor: chartColors.investedBg,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 8,
+                            pointBackgroundColor: chartColors.invested,
+                            borderWidth: 3
+                        },
+                        {
+                            label: 'Corpus',
+                            data: corpusArr,
+                            borderColor: chartColors.corpus,
+                            backgroundColor: chartColors.corpusBg,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 8,
+                            pointBackgroundColor: chartColors.corpus,
+                            borderWidth: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 1500, easing: 'easeOutQuart' },
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#94a3b8', font: { family: 'Inter', size: 13, weight: 600 }, padding: 20 }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 12, 41, 0.95)',
+                            titleFont: { family: 'Inter', weight: 700 },
+                            bodyFont: { family: 'Inter' },
+                            padding: 14,
+                            cornerRadius: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    return ' ' + context.dataset.label + ': ' + formatCurrencyFull(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                            ticks: { color: '#64748b', font: { family: 'Inter', size: 11 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#64748b',
+                                font: { family: 'Inter', size: 11 },
+                                callback: function(value) { return formatCurrency(value); }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        const considerInflation = document.getElementById('considerInflation');
+        const inflationInput = document.getElementById('inflationInput');
+
+        considerInflation.addEventListener('change', function() {
+            inflationInput.classList.toggle('visible', this.checked);
+        });
+
+        document.querySelectorAll('input').forEach(function(input) {
+            input.addEventListener('focus', function() { clearError(input.id); });
+        });
+
+        document.getElementById('sipForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const sip = parseNumericInput(document.getElementById('sipAmount').value);
+            const stepUp = parseNumericInput(document.getElementById('stepUp').value);
+            const initial = parseNumericInput(document.getElementById('initialCorpus').value);
+            const rate = parseNumericInput(document.getElementById('rateOfReturn').value);
+            const years = parseInt(document.getElementById('years').value) || 0;
+            const considerInfl = considerInflation.checked;
+            const inflation = considerInfl ? parseNumericInput(document.getElementById('inflationRate').value) : 0;
+
+            if (!validateInputs(sip, initial, rate, years, stepUp, inflation)) return;
+
+            const n = years * MONTHS_IN_YEAR;
+            const sipFV = calculateSIPFutureValue(sip, rate, n, stepUp);
+            const initialFV = calculateInitialInvestmentFV(initial, rate, n);
+            const totalFV = sipFV + initialFV;
+            const invested = calculateTotalInvested(initial, sip, years, stepUp);
+            const interest = totalFV - invested;
+            const percentageReturn = invested > 0 ? ((interest / invested) * 100) : 0;
+
+            var html = '<div class="result-card invested">' +
+                '<div class="card-label">Total Invested</div>' +
+                '<div class="card-value">' + formatCurrency(invested) + '</div>' +
+                '</div>' +
+                '<div class="result-card future">' +
+                '<div class="card-label">Future Value</div>' +
+                '<div class="card-value">' + formatCurrency(totalFV) + '</div>' +
+                '</div>' +
+                '<div class="result-card gains">' +
+                '<div class="card-label">Wealth Gained</div>' +
+                '<div class="card-value">' + formatCurrency(interest) + '</div>' +
+                '</div>' +
+                '<div class="result-card returns">' +
+                '<div class="card-label">Total Returns</div>' +
+                '<div class="card-value">' + percentageReturn.toFixed(1) + '%</div>' +
+                '</div>';
+
+            if (considerInfl && inflation > 0) {
+                var realRate = ((1 + rate / 100) / (1 + inflation / 100) - 1) * 100;
+                var sipRealFV = calculateSIPFutureValue(sip, realRate, n, stepUp);
+                var initialRealFV = calculateInitialInvestmentFV(initial, realRate, n);
+                var totalRealFV = sipRealFV + initialRealFV;
+                html += '<div class="result-card inflation full-width">' +
+                    '<div class="card-label">Inflation-Adjusted Value</div>' +
+                    '<div class="card-value">' + formatCurrency(totalRealFV) + '</div>' +
+                    '</div>';
+            }
+
+            document.getElementById('resultGrid').innerHTML = html;
+            var section = document.getElementById('resultSection');
+            section.classList.add('visible');
+
+            window.sipChartData = { invested: invested, totalFV: totalFV, sip: sip, initial: initial, rate: rate, years: years, stepUp: stepUp };
+            window.sipYearlyData = calculateYearlyData(initial, sip, rate, years, stepUp);
+
+            setTimeout(function() { section.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
+        });
+
+        document.getElementById('togglePieBtn').addEventListener('click', function() {
+            var container = document.getElementById('pieChartContainer');
+            var btn = this;
+            var isActive = container.classList.contains('active');
+            if (isActive) {
+                container.classList.remove('active');
+                btn.classList.remove('active-toggle');
+            } else {
+                container.classList.add('active');
+                btn.classList.add('active-toggle');
+                if (window.sipChartData && window.Chart) {
+                    requestAnimationFrame(function() {
+                        drawPieChart(window.sipChartData.invested, window.sipChartData.totalFV);
+                    });
+                }
+            }
+        });
+
+        document.getElementById('toggleLineBtn').addEventListener('click', function() {
+            var container = document.getElementById('lineChartContainer');
+            var btn = this;
+            var isActive = container.classList.contains('active');
+            if (isActive) {
+                container.classList.remove('active');
+                btn.classList.remove('active-toggle');
+            } else {
+                container.classList.add('active');
+                btn.classList.add('active-toggle');
+                if (window.sipYearlyData && window.Chart) {
+                    requestAnimationFrame(function() {
+                        var d = window.sipYearlyData;
+                        drawLineChart(d.labels, d.investedArr, d.corpusArr);
+                    });
+                }
+            }
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            document.getElementById('sipForm').reset();
+            document.getElementById('resultSection').classList.remove('visible');
+            document.getElementById('pieChartContainer').classList.remove('active');
+            document.getElementById('lineChartContainer').classList.remove('active');
+            document.getElementById('togglePieBtn').classList.remove('active-toggle');
+            document.getElementById('toggleLineBtn').classList.remove('active-toggle');
+            inflationInput.classList.remove('visible');
+            clearAllErrors();
+            if (window.sipPieChart) { window.sipPieChart.destroy(); window.sipPieChart = null; }
+            if (window.sipLineChart) { window.sipLineChart.destroy(); window.sipLineChart = null; }
+            window.sipChartData = null;
+            window.sipYearlyData = null;
+        });
+
+        function formatNumberInput(input) {
+            input.addEventListener('input', function() {
+                var value = input.value.replace(/,/g, '');
+                if (!value) { input.value = ''; return; }
+                value = value.replace(/[^0-9.]/g, '');
+                var parts = value.split('.');
+                var formatted = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                if (parts.length > 1) formatted += '.' + parts[1];
+                var selectionStart = input.selectionStart;
+                var oldLength = input.value.length;
+                input.value = formatted;
+                var diff = formatted.length - oldLength;
+                if (document.activeElement === input && selectionStart !== null) {
+                    input.setSelectionRange(selectionStart + diff, selectionStart + diff);
+                }
+            });
+        }
+        formatNumberInput(document.getElementById('sipAmount'));
+        formatNumberInput(document.getElementById('initialCorpus'));
+    </script>
+</body>
+</html>
